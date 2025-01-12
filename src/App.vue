@@ -27,15 +27,20 @@
       <h2>Datos Recibidos:</h2>
       <textarea readonly v-model="serialStore.receivedData" rows="15" cols="80"></textarea>
     </div>
+    <MapComponent :coordinates="serialStore.gpsCoordinates" />
   </div>
 </template>
 
 <script>
-import { useSerialStore } from './stores/serialStore'
+import { useSerialStore } from './stores/serialStore.js'
 import { computed, onBeforeUnmount } from 'vue'
+import MapComponent from './components/MapComponent.vue'
 
 export default {
   name: 'App',
+  components: {
+    MapComponent
+  },
   setup() {
     const serialStore = useSerialStore()
 
