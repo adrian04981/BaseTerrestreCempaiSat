@@ -1,10 +1,8 @@
 // src/firebase.js
 
-// Importa las funciones necesarias de Firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getDatabase } from "firebase/database"; // Importa Realtime Database
 
-// Tu configuración de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyC7EaUZVwZINmjqTsZ9VYhIyS3QGp2Y_P4",
   authDomain: "cempai-sat.firebaseapp.com",
@@ -17,8 +15,7 @@ const firebaseConfig = {
 // Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializa Firestore
-const db = getFirestore(app);
+// Inicializa Realtime Database
+const realtimeDB = getDatabase(app);
 
-// Exporta la instancia de Firestore para usarla en otros lugares
-export { db };
+export { realtimeDB };

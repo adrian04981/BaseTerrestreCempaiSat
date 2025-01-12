@@ -3,7 +3,7 @@
 <template>
   <div class="container">
     <h1>Conexión Serial con Arduino</h1>
-    
+
     <div class="buttons">
       <button @click="connect" :disabled="serialStore.isConnected">Conectar</button>
       <button @click="startReceiving" :disabled="!serialStore.isConnected || serialStore.isReceiving">Iniciar Recepción</button>
@@ -11,9 +11,16 @@
       <button @click="disconnect" :disabled="!serialStore.isConnected">Desconectar</button>
     </div>
 
+    <div class="firebase-option">
+      <input type="checkbox" id="firebaseLogging" v-model="firebaseLogging" @change="toggleFirebaseLogging">
+      <label for="firebaseLogging">Registrar datos en Firebase</label>
+    </div>
+
     <div class="status">
       <p><strong>Estado de la Conexión:</strong> {{ serialStore.isConnected ? 'Conectado' : 'Desconectado' }}</p>
       <p><strong>Recepción de Datos:</strong> {{ serialStore.isReceiving ? 'En curso' : 'Detenida' }}</p>
+      <p><strong>Registro en Firebase:</strong> {{ serialStore.logToFirebase ? 'Activado' : 'Desactivado' }}</p>
+      <p v-if="serialStore.logToFirebase && serialStore.currentMissionId"><strong>ID de Misión:</strong> {{ serialStore.currentMissionId }}</p>
     </div>
 
     <div class="data-display">
@@ -25,15 +32,13 @@
 
 <script>
 import { useSerialStore } from './stores/serialStore'
-import { storeToRefs } from 'pinia'
-import { onBeforeUnmount } from 'vue'
+import { computed, onBeforeUnmount } from 'vue'
 
 export default {
   name: 'App',
   setup() {
     const serialStore = useSerialStore()
 
-    // Funciones para los botones
     const connect = async () => {
       await serialStore.connectSerial()
     }
@@ -50,7 +55,11 @@ export default {
       await serialStore.disconnectSerial()
     }
 
-    // Asegura que la conexión se cierre al cerrar la aplicación
+    const firebaseLogging = computed({
+      get: () => serialStore.logToFirebase,
+      set: (value) => serialStore.toggleFirebaseLogging(value)
+    })
+
     onBeforeUnmount(() => {
       if (serialStore.isConnected) {
         serialStore.disconnectSerial()
@@ -62,7 +71,9 @@ export default {
       connect,
       startReceiving,
       stopReceiving,
-      disconnect
+      disconnect,
+      firebaseLogging,
+      toggleFirebaseLogging: serialStore.toggleFirebaseLogging,
     }
   }
 }
@@ -74,6 +85,7 @@ export default {
   margin: 0 auto;
   padding: 20px;
   text-align: center;
+  font-family: Arial, sans-serif;
 }
 
 .buttons {
@@ -83,10 +95,22 @@ export default {
 .buttons button {
   margin: 0 10px;
   padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.firebase-option {
+  margin-bottom: 20px;
 }
 
 .status {
   margin-bottom: 20px;
+  text-align: left;
+}
+
+.status p {
+  margin: 5px 0;
+  font-size: 14px;
 }
 
 .data-display textarea {
@@ -94,5 +118,6 @@ export default {
   padding: 10px;
   font-family: monospace;
   font-size: 14px;
+  resize: none;
 }
 </style>
