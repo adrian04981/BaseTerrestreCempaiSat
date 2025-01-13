@@ -1,254 +1,345 @@
 <template>
   <div class="app">
-    <h1>Conexión Serial con Arduino</h1>
-    <div class="buttons">
-      <button @click="connect" :disabled="serialStore.isConnected" class="btn-primary">
-        <i class="fas fa-plug"></i> Conectar
-      </button>
-      <button @click="startReceiving" :disabled="!serialStore.isConnected || serialStore.isReceiving" class="btn-secondary">
-        <i class="fas fa-play"></i> Iniciar Recepción
-      </button>
-      <button @click="stopReceiving" :disabled="!serialStore.isReceiving" class="btn-secondary">
-        <i class="fas fa-stop"></i> Detener Recepción
-      </button>
-      <button @click="disconnect" :disabled="!serialStore.isConnected" class="btn-danger">
-        <i class="fas fa-times-circle"></i> Desconectar
-      </button>
-    </div>
-
-    <div class="firebase-option">
-      <input type="checkbox" id="firebaseLogging" v-model="firebaseLogging" @change="toggleFirebaseLogging">
-      <label for="firebaseLogging"><i class="fas fa-database"></i> Registrar datos en Firebase</label>
-    </div>
-
-    <div class="status">
-      <p><strong>Estado de la Conexión:</strong> <span :class="serialStore.isConnected ? 'status-connected' : 'status-disconnected'">{{ serialStore.isConnected ? 'Conectado' : 'Desconectado' }}</span></p>
-      <p><strong>Recepción de Datos:</strong> <span :class="serialStore.isReceiving ? 'status-receiving' : 'status-stopped'">{{ serialStore.isReceiving ? 'En curso' : 'Detenida' }}</span></p>
-      <p><strong>Registro en Firebase:</strong> {{ serialStore.logToFirebase ? 'Activado' : 'Desactivado' }}</p>
-      <p v-if="serialStore.logToFirebase && serialStore.currentMissionId"><strong>ID de Misión:</strong> {{ serialStore.currentMissionId }}</p>
-    </div>
-
-    <!-- Sección para mostrar los datos recibidos -->
-    <!--<div class="data-display">
-      <h2><i class="fas fa-stream"></i> Datos Recibidos:</h2>
-      <textarea readonly v-model="serialStore.receivedData" rows="15" cols="80"></textarea>
-    </div>-->
-
-    <div class="grupo">
-      <div class="grupo-item">
-        <SensorData :temperature="serialStore.temperature" :humidity="serialStore.humidity" :pressure="serialStore.pressure" />
+    <!-- Sección Superior (top-container) -->
+    <div class="top-container">
+      <!-- Panel Izquierdo -->
+      <div class="left-panel">
+        <div class="status">
+          <p>
+            <strong>Estado de la Conexión:</strong>
+            <span :class="serialStore.isConnected ? 'status-connected' : 'status-disconnected'">
+              {{ serialStore.isConnected ? 'Conectado' : 'Desconectado' }}
+            </span>
+          </p>
+          <p>
+            <strong>Recepción de Datos:</strong>
+            <span :class="serialStore.isReceiving ? 'status-receiving' : 'status-stopped'">
+              {{ serialStore.isReceiving ? 'En curso' : 'Detenida' }}
+            </span>
+          </p>
+          <p>
+            <strong>Registro en Firebase:</strong>
+            {{ serialStore.logToFirebase ? 'Activado' : 'Desactivado' }}
+          </p>
+        </div>
+        <div class="firebase-switch">
+          <label class="switch">
+            <input
+              type="checkbox"
+              class="checkbox"
+              :checked="firebaseLogging"
+              @change="toggleFirebaseLogging($event.target.checked)"
+            />
+            <div class="slider"></div>
+          </label>
+          <span class="switch-label">Registrar datos en Firebase</span>
+        </div>
       </div>
-      <div class="grupo-item">
-        <SpeedGauge :speed="serialStore.speed" />
-      </div>
-      <div class="grupo-item">
-        <MapComponent :coordinates="serialStore.gpsCoordinates" />
+
+      <!-- Panel Derecho -->
+      <div class="right-panel">
+        <h1>CEMPAI - SAT BASE TERRESTRE</h1>
+        <div class="buttons">
+          <button @click="connect" :disabled="serialStore.isConnected" class="btn-primary">
+            Conectar
+          </button>
+          <button
+            @click="startReceiving"
+            :disabled="!serialStore.isConnected || serialStore.isReceiving"
+            class="btn-secondary"
+          >
+            Iniciar Recepción
+          </button>
+          <button
+            @click="stopReceiving"
+            :disabled="!serialStore.isReceiving"
+            class="btn-secondary"
+          >
+            Detener Recepción
+          </button>
+          <button
+            @click="disconnect"
+            :disabled="!serialStore.isConnected"
+            class="btn-danger"
+          >
+            Desconectar
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="grupo">
-      <div class="grupo-item">
+    <!-- Sección Inferior: Grilla principal -->
+    <div class="main-grid">
+      <!-- Tarjeta de sensor (Temperatura, Presión, Humedad) -->
+      <div class="grid-item sensor-card">
+        <SensorData
+          :temperature="serialStore.temperature"
+          :pressure="serialStore.pressure"
+          :humidity="serialStore.humidity"
+        />
+      </div>
+
+      <!-- Gráfico de Altitud -->
+      <div class="grid-item chart">
         <AltitudeChart :altitudeHistory="serialStore.altitudeHistory" />
       </div>
-      <div class="grupo-item">
+
+      <!-- Mapa -->
+      <div class="grid-item">
+        <MapComponent :coordinates="serialStore.gpsCoordinates" />
+      </div>
+
+      <!-- Velocidad -->
+      <div class="grid-item">
+        <SpeedGauge :speed="serialStore.speed" />
+      </div>
+
+      <!-- Giroscopio -->
+      <div class="grid-item">
+        <GyroChart :gyroHistory="serialStore.gyroHistory" />
+      </div>
+
+      <!-- Aceleración -->
+      <div class="grid-item">
+        <AccelerationChart :accHistory="serialStore.accHistory" />
+      </div>
+
+      <!-- Brújula -->
+      <div class="grid-item">
         <Compass :orientationMag="serialStore.orientationMag" />
       </div>
-      <div class="grupo-item">
-        <!-- Aquí puedes agregar otro componente -->
-      </div>
     </div>
-
   </div>
 </template>
 
 <script>
+import { computed } from 'vue'
 import { useSerialStore } from './stores/serialStore.js'
-import { computed, onBeforeUnmount } from 'vue'
-import MapComponent from './components/MapComponent.vue'
-import SpeedGauge from './components/SpeedGauge.vue'
+
 import SensorData from './components/SensorData.vue'
 import AltitudeChart from './components/AltitudeChart.vue'
+import SpeedGauge from './components/SpeedGauge.vue'
 import Compass from './components/Compass.vue'
+import MapComponent from './components/MapComponent.vue'
+import AccelerationChart from './components/AccelerationChart.vue'
+import GyroChart from './components/GyroChart.vue'
 
 export default {
   name: 'App',
   components: {
-    MapComponent,
-    SpeedGauge,
     SensorData,
     AltitudeChart,
-    Compass
+    SpeedGauge,
+    Compass,
+    MapComponent,
+    AccelerationChart,
+    GyroChart
   },
   setup() {
     const serialStore = useSerialStore()
 
+    const firebaseLogging = computed({
+      get: () => serialStore.logToFirebase,
+      set: (val) => serialStore.toggleFirebaseLogging(val)
+    })
+
     const connect = async () => {
       await serialStore.connectSerial()
     }
-
     const startReceiving = async () => {
       await serialStore.startReceiving()
     }
-
     const stopReceiving = () => {
       serialStore.stopReceiving()
     }
-
     const disconnect = async () => {
       await serialStore.disconnectSerial()
     }
-
-    const firebaseLogging = computed({
-      get: () => serialStore.logToFirebase,
-      set: (value) => serialStore.toggleFirebaseLogging(value)
-    })
-
-    onBeforeUnmount(() => {
-      if (serialStore.isConnected) {
-        serialStore.disconnectSerial()
-      }
-    })
+    const toggleFirebaseLogging = (checked) => {
+      firebaseLogging.value = checked
+    }
 
     return {
       serialStore,
+      firebaseLogging,
+      toggleFirebaseLogging,
       connect,
       startReceiving,
       stopReceiving,
-      disconnect,
-      firebaseLogging,
-      toggleFirebaseLogging: serialStore.toggleFirebaseLogging,
+      disconnect
     }
   }
 }
 </script>
 
-<style>
-/* Fondo y estilo general */
+<style scoped>
+/* El mismo CSS que ya tienes, solamente ten cuidado
+   en la parte inferior al meter los grid-items. */
 .app {
-  background-color: #343131;
-  color: #EEDF7A;
+  background-color: #eaecef;
+  color: #333;
   font-family: 'Arial', sans-serif;
-  padding: 20px;
   min-height: 100vh;
   box-sizing: border-box;
+  padding: 20px;
 }
 
-/* Encabezado */
-h1 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #D8A25E;
-}
-
-/* Botones */
-.buttons {
+.top-container {
   display: flex;
-  justify-content: center;
-  gap: 10px;
+  gap: 20px;
   margin-bottom: 20px;
 }
 
-button {
-  border: none;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-button i {
-  margin-right: 8px;
-}
-
-.btn-primary {
-  background-color: #A04747;
-  color: #FFF;
-}
-
-.btn-primary:hover {
-  background-color: #E05C5C;
-}
-
-.btn-secondary {
-  background-color: #D8A25E;
-  color: #343131;
-}
-
-.btn-secondary:hover {
-  background-color: #EEDF7A;
-}
-
-.btn-danger {
-  background-color: #A04747;
-  color: #FFF;
-}
-
-.btn-danger:hover {
-  background-color: #E05C5C;
-}
-
-/* Firebase opción */
-.firebase-option {
-  margin-bottom: 20px;
-  color: #D8A25E;
-}
-
-/* Estado */
-.status {
-  margin-bottom: 20px;
-  text-align: left;
+.left-panel {
+  background-color: #2b2b2b;
+  color: #EEDF7A;
+  padding: 15px;
+  border-radius: 6px;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .status p {
-  margin: 5px 0;
+  margin: 6px 0;
 }
-
 .status-connected {
   color: #D8A25E;
 }
-
 .status-disconnected {
   color: #A04747;
 }
-
 .status-receiving {
   color: #EEDF7A;
 }
-
 .status-stopped {
   color: #D8A25E;
 }
 
-/* Visualización de datos */
-.data-display textarea {
+.firebase-switch {
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+}
+.switch-label {
+  margin-left: 8px;
+}
+
+.checkbox {
+  display: none;
+}
+.slider {
+  width: 60px;
+  height: 30px;
+  background-color: lightgray;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  border: 4px solid transparent;
+  transition: 0.3s;
+  box-shadow: 0 0 10px 0 rgb(0,0,0,0.25) inset;
+  cursor: pointer;
+}
+.slider::before {
+  content: '';
+  display: block;
   width: 100%;
-  padding: 12px;
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  resize: none;
-  border: 1px solid #D8A25E;
-  border-radius: 8px;
+  height: 100%;
+  background-color: #fff;
+  transform: translateX(-30px);
+  border-radius: 20px;
+  transition: 0.3s;
+  box-shadow: 0 0 10px 3px rgba(0,0,0,0.25);
+}
+.checkbox:checked ~ .slider::before {
+  transform: translateX(30px);
+}
+.checkbox:checked ~ .slider {
+  background-color: #2196F3;
+}
+.checkbox:active ~ .slider::before {
+  transform: translate(0);
+}
+
+.right-panel {
   background-color: #343131;
   color: #EEDF7A;
-}
-
-/* Grupo de componentes */
-.grupo {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.grupo-item {
-  flex: 1 1 calc(33.333% - 20px);
   padding: 15px;
-  border: 1px solid #D8A25E;
+  border-radius: 6px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.right-panel h1 {
+  margin: 0 0 20px;
+  font-size: 24px;
+  color: #D8A25E;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+}
+button {
+  border: none;
   border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.btn-primary {
   background-color: #A04747;
   color: #FFF;
-  text-align: center;
+}
+.btn-primary:hover {
+  background-color: #E05C5C;
+}
+.btn-secondary {
+  background-color: #D8A25E;
+  color: #343131;
+}
+.btn-secondary:hover {
+  background-color: #EEDF7A;
+}
+.btn-danger {
+  background-color: #A04747;
+  color: #FFF;
+}
+.btn-danger:hover {
+  background-color: #E05C5C;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 260px;
+  gap: 20px;
+}
+
+/* Cada "grid-item" es una celda */
+.grid-item {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 1024px) {
+  .main-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
