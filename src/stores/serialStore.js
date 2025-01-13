@@ -15,6 +15,13 @@ export const useSerialStore = defineStore('serial', {
     currentMissionId: null,
     buffer: '',
     gpsCoordinates: '0/0', // Coordenadas GPS iniciales
+    speed: 0, // Velocidad inicial
+    temperature: 0, // Temperatura inicial
+    humidity: 0, // Humedad inicial
+    pressure: 0, // Presión inicial
+    altitude: 0, // Altitud inicial
+    altitudeHistory: [], // Histórico de altitud
+    orientationMag: 0, // Orientación magnética inicial
   }),
   actions: {
     async connectSerial() {
@@ -60,8 +67,19 @@ export const useSerialStore = defineStore('serial', {
                 const trimmedLine = line.trim()
                 if (trimmedLine) {
                   this.receivedData += trimmedLine + '\n'
-                  const [lat, lng] = trimmedLine.split('/').map(Number)
+                  const parts = trimmedLine.split('/')
+                  const [lat, lng] = parts.slice(0, 2).map(Number)
                   this.gpsCoordinates = `${lat}/${lng}`
+                  this.speed = Number(parts[6]) // Extraer la velocidad
+                  this.temperature = Number(parts[8]) // Extraer la temperatura
+                  this.humidity = Number(parts[9]) // Extraer la humedad
+                  this.pressure = Number(parts[11]) // Extraer la presión
+                  this.altitude = Number(parts[7]) // Extraer la altitud
+                  this.orientationMag = Number(parts[19]) // Extraer la orientación magnética
+                  this.altitudeHistory.push({
+                    time: new Date().toISOString(),
+                    value: this.altitude
+                  })
                   if (this.logToFirebase && this.currentMissionId) {
                     await this.logDataToRealtimeDatabase(trimmedLine)
                   }
