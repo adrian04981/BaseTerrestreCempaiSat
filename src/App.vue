@@ -57,6 +57,7 @@
         <!-- Aquí puedes agregar otro componente -->
       </div>
     </div>
+
   </div>
 </template>
 
