@@ -17,7 +17,8 @@
     "pinia": "^2.3.0",
     "uplot": "^1.6.31",
     "vue": "^3.5.13",
-    "vue-canvas-gauges": "^0.0.0"
+    "vue-canvas-gauges": "^0.0.0",
+    "vue-echarts": "^7.0.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",

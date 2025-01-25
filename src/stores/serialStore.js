@@ -161,17 +161,38 @@ export const useSerialStore = defineStore('serial', {
 
     // Detener la recepción de datos
     stopReceiving() {
-      this.isReceiving = false
+      this.isReceiving = false;
       if (this.reader) {
-        this.reader.cancel()
-        this.reader = null
+        this.reader.cancel();
+        this.reader = null;
       }
-      console.log('Recepción de datos detenida')
-
+      console.log('Recepción de datos detenida');
+    
       // Cerrar misión en Firebase si estaba activa
       if (this.logToFirebase && this.currentMissionId) {
-        this.closeCurrentMission()
+        this.closeCurrentMission();
       }
+    
+      // Resetear todos los datos a 0
+      this.resetData();
+    },
+
+    resetData() {
+      // Reiniciar los valores de sensores
+      this.gpsCoordinates = '0/0';
+      this.speed = 0;
+      this.temperature = 0;
+      this.humidity = 0;
+      this.pressure = 0;
+      this.altitude = 0;
+      this.orientationMag = 0;
+    
+      // Vaciar los historiales
+      this.altitudeHistory = [];
+      this.accHistory = [];
+      this.gyroHistory = [];
+    
+      console.log('Datos reseteados a 0');
     },
 
     // Desconectar serial
