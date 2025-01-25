@@ -1,5 +1,3 @@
-// src/stores/serialStore.js
-
 import { defineStore } from 'pinia'
 import { realtimeDB } from '../firebase'
 import { ref as dbRef, set, push, update } from 'firebase/database'
@@ -117,19 +115,18 @@ export const useSerialStore = defineStore('serial', {
                   const accZ = Number(parts[15])
 
                   // Giroscopio (GYX/GYY/GYZ -> parts[16], [17], [18])
-                  const gyroX = Number(parts[16])
-                  const gyroY = Number(parts[17])
-                  const gyroZ = Number(parts[18])
+                  const gyroX = Number(parts[16]) || 0;
+                  const gyroY = Number(parts[17]) || 0;
+                  const gyroZ = Number(parts[18]) || 0;
+
 
                   // Historial de altitud
-                  this.altitudeHistory.push({
-                    time: new Date().toISOString(),
-                    value: this.altitude
-                  })
+                  this.altitudeHistory = [...this.altitudeHistory, { value: this.altitude, time: new Date().toISOString() }];
+
 
                   // Historial de aceleración
                   this.accHistory.push({
-                    time: new Date().toISOString(),
+
                     x: accX,
                     y: accY,
                     z: accZ
@@ -137,7 +134,7 @@ export const useSerialStore = defineStore('serial', {
 
                   // Historial de giroscopio
                   this.gyroHistory.push({
-                    time: new Date().toISOString(),
+
                     x: gyroX,
                     y: gyroY,
                     z: gyroZ

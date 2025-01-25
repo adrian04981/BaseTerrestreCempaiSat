@@ -1,13 +1,12 @@
 <template>
-  <div>
-    <canvas ref="chart"></canvas>
+  <div class="acceleration-text">
+    <p><strong>Aceleración en X:</strong> {{ latestAcceleration.x }} m/s²</p>
+    <p><strong>Aceleración en Y:</strong> {{ latestAcceleration.y }} m/s²</p>
+    <p><strong>Aceleración en Z:</strong> {{ latestAcceleration.z }} m/s²</p>
   </div>
 </template>
 
 <script>
-import { Chart, registerables } from 'chart.js'
-Chart.register(...registerables)
-
 export default {
   name: 'AccelerationChart',
   props: {
@@ -16,100 +15,24 @@ export default {
       default: () => []
     }
   },
-  data() {
-    return {
-      chart: null
-    }
-  },
-  mounted() {
-    this.renderChart()
-  },
-  watch: {
-    accHistory: {
-      handler() {
-        this.renderChart()
-      },
-      deep: true
-    }
-  },
-  methods: {
-    renderChart() {
-      // Destruir el gráfico previo si existe
-      if (this.chart) {
-        this.chart.destroy()
-      }
-
-      const ctx = this.$refs.chart.getContext('2d')
-
-      // Construimos las etiquetas a partir de la fecha-hora
-      const labels = this.accHistory.map(item => {
-        const date = new Date(item.time)
-        // Puedes ajustar el formato como prefieras (ej. toLocaleTimeString())
-        return date.toLocaleTimeString()
-      })
-
-      this.chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'ACCX',
-              data: this.accHistory.map(item => item.x),
-              backgroundColor: 'rgba(255, 99, 132, 0.2)',
-              borderColor: 'rgba(255, 99, 132, 1)',
-              borderWidth: 2,
-              fill: false,
-              tension: 0.1
-            },
-            {
-              label: 'ACCY',
-              data: this.accHistory.map(item => item.y),
-              backgroundColor: 'rgba(54, 162, 235, 0.2)',
-              borderColor: 'rgba(54, 162, 235, 1)',
-              borderWidth: 2,
-              fill: false,
-              tension: 0.1
-            },
-            {
-              label: 'ACCZ',
-              data: this.accHistory.map(item => item.z),
-              backgroundColor: 'rgba(255, 206, 86, 0.2)',
-              borderColor: 'rgba(255, 206, 86, 1)',
-              borderWidth: 2,
-              fill: false,
-              tension: 0.1
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            x: {
-              title: {
-                display: true,
-                text: 'Tiempo'
-              }
-            },
-            y: {
-              title: {
-                display: true,
-                text: 'Aceleración (m/s²)'
-              },
-              beginAtZero: true
-            }
-          }
-        }
-      })
+  computed: {
+    latestAcceleration() {
+      // Retorna el último elemento del historial o valores por defecto
+      const last = this.accHistory[this.accHistory.length - 1];
+      return last || { x: 0, y: 0, z: 0 };
     }
   }
-}
+};
 </script>
 
 <style scoped>
-canvas {
-  max-width: 100%;
-  max-height: 400px;
-  background-color: #fff;
+.acceleration-text {
+  font-size: 1.2rem;
+  color: #333;
+  text-align: center;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #f9f9f9;
 }
 </style>

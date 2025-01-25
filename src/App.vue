@@ -80,8 +80,12 @@
       </div>
 
       <!-- Gráfico de Altitud -->
-      <div class="grid-item chart">
-        <AltitudeChart :altitudeHistory="serialStore.altitudeHistory" />
+      <div class="grid-item">
+        <AltitudeChart 
+  :altitude="serialStore.altitude" 
+  :isReceiving="serialStore.isReceiving" 
+/>
+
       </div>
 
       <!-- Mapa -->
@@ -100,7 +104,7 @@
       </div>
 
       <!-- Aceleración -->
-      <div class="grid-item">
+      <div class="">
         <AccelerationChart :accHistory="serialStore.accHistory" />
       </div>
 
